@@ -1,4 +1,3 @@
-import {stdin as input, stdout as output,} from 'node:process';
 import * as fs from 'node:fs';
 import inquirer, {Answers} from 'inquirer';
 import path from "path";
