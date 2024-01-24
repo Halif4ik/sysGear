@@ -1,45 +1,37 @@
 import {stdin as input, stdout as output,} from 'node:process';
-import * as fs from 'node:fs';
 import inquirer, {Answers} from 'inquirer';
-import path from "path";
 
-const rulesFile: string = 'conversion_rules.json';
-type TInputData = {
+const rulesFile: string = 'db.json';
+
+interface IUser {
+    [key: string]: string | number | boolean
+}
+
+/*{"data": [{"user": "mike@mail.com", "rating": 20, "disabled": false},
+{"user": "greg@mail.com", "rating": 14, "disabled": false},
+{"user": "john@mail.com", "rating": 25, "disabled": true}],
+"condition": {"exclude": [{"disabled": true}], "sortBy": ["rating"]}}*/
+type TConditionsAndData = {
+    "data": IUser[],
+    "condition": {
+        "include"?: IUser[],
+        "exclude"?: IUser[],
+        "sortBy": string[]
+    }
+}
+type  TNewRules = {
     "distance": {
         "unit": string,
         "value": number
     },
     "convertTo": string
 }
-type  TConversionRules = {
-    "distance": {
-        "unit": string,
-        "value": number
-    },
-    "convertTo": string
-}
 
-async function readRules(pathJoin: string): Promise<any> {
-    // Load conversion rules from a JSON file
-    const conversionRulesBuffer: Buffer = await fs.promises.readFile(pathJoin);
-    const conversionRules = JSON.parse(conversionRulesBuffer.toString('utf-8'));
-    return conversionRules;
-}
+async function tookAndSorting(parsedData: TConditionsAndData, changedRules: string | null): Promise<IUser[]> {
 
-async function convertDistance(parsedData: TInputData, pathJoin: string, changedRules: string | null): Promise<{
-    unit: string,
-    value: number
-}> {
-    const rules = changedRules ? JSON.parse(changedRules) : await readRules(pathJoin);
-
-    // Perform the conversion based on the rules
-    const conversionFactor = rules[parsedData.distance.unit][parsedData.convertTo];
-    console.log('conversionFactor-', conversionFactor);
-    const convertedValue = parsedData.distance.value * conversionFactor;
-
-    console.log(`Result: `, {unit: parsedData.convertTo, value: parseFloat(convertedValue.toFixed(2))});
     // Return the result
-    return {unit: parsedData.convertTo, value: parseFloat(convertedValue.toFixed(2))};
+    return [{"user": "greg@mail.com", "rating": 14, "disabled": false},
+        {"user": "mike@mail.com", "rating": 20, "disabled": false}];
 }
 
 async function getFromConsole(): Promise<Answers> {
@@ -47,18 +39,18 @@ async function getFromConsole(): Promise<Answers> {
         {
             type: 'input',
             name: 'inputData',
-            message: 'Enter a JSON : ',
+            message: 'Enter condition and data in JSON :',
         },
         {
             type: 'input',
             name: 'additionalRule',
-            message: 'Enter JSON for extend execution: ',
+            message: 'Additional Extension: ',
             when: (answers: any) => answers.name !== '',
         }
     ])
 }
 
-/* inputData in format- {"distance": {"unit": "mm", "value": 5000}, "convertTo": "m"}  */
+/* inputData in format- {"condition": {"include": [{"name": "John"}], "sortBy": ["email"]}}  */
 !async function run(): Promise<void> {
     // Get user input for distance and conversion
     const fromConsole: Answers = await getFromConsole();
@@ -67,26 +59,20 @@ async function getFromConsole(): Promise<Answers> {
         // Get out from another functions wich has empty inputData
         return;
     }
-    const dirname: string = path.dirname(new URL(import.meta.url).pathname);
-    const filePath: string = path.join(dirname, '../public');
-    const pathJoin: string = path.join(filePath, rulesFile);
 
     // Parse the user input
-    const inputDataParsed: TInputData = JSON.parse(fromConsole.inputData);
-    const conversionRulesParsed: TConversionRules | null = fromConsole.additionalRule ? JSON.parse(fromConsole.additionalRule) : null;
-    let result: { unit: string; value: number };
+    const inputConditions: TConditionsAndData = JSON.parse(fromConsole.inputData);
+    const conversionRulesParsed: TNewRules | null = fromConsole.additionalRule ? JSON.parse(fromConsole.additionalRule) : null;
+    let result: IUser[] = [];
+
     // Combine user input with conversion rules with additional rules in file
     if (conversionRulesParsed) {
-        const existRules = await readRules(pathJoin);
-        await fs.promises.writeFile(pathJoin, JSON.stringify({...existRules, ...conversionRulesParsed}));
-        result = await convertDistance(inputDataParsed, pathJoin, JSON.stringify({...existRules, ...conversionRulesParsed}));
+        /*temporary empty*/
     } else
-
-        // Combine user input with conversion rules and perform the conversion
-        result = await convertDistance(inputDataParsed, pathJoin, null);
+        result = await tookAndSorting(inputConditions, null);
 
     // Display the result
-    console.log(`Converted distance: ${result.value} ${result.unit}`);
+    console.log(`Result: ${{'result': result}}`);
 }()
 
 
