@@ -1,7 +1,4 @@
-import {stdin as input, stdout as output,} from 'node:process';
 import inquirer, {Answers} from 'inquirer';
-
-const rulesFile: string = 'db.json';
 
 interface IUser {
     [key: string]: string | number | boolean
@@ -27,11 +24,46 @@ type  TNewRules = {
     "convertTo": string
 }
 
-async function tookAndSorting(parsedData: TConditionsAndData, changedRules: string | null): Promise<IUser[]> {
+function applyCondition(data: IUser[], condition: TConditionsAndData['condition']): IUser[] {
+    if (condition.include) {
+        data = data.filter((item: IUser) => condition.include!.some((rule: IUser) =>
+            Object.entries(rule).every(([key, value]) => item[key] === value)));
+        console.log('INC applyCondition-', data);
+    }
 
-    // Return the result
-    return [{"user": "greg@mail.com", "rating": 14, "disabled": false},
-        {"user": "mike@mail.com", "rating": 20, "disabled": false}];
+    if (condition.exclude) {
+        data = data.filter(item => !condition.exclude!.some(rule =>
+            Object.entries(rule).every(([key, value]) => item[key] === value)));
+        console.log('EXc applyCondition-', data);
+    }
+    return data;
+}
+
+function sortByKeys(arrUsers: IUser[], sortKeys: string[]): IUser[] {
+    console.log('sortBy-', sortKeys);
+    return arrUsers.sort((aUser: IUser, bUser: IUser): number => {
+        for (const sorKey of sortKeys) {
+            const comparison: number = String(aUser[sorKey]).localeCompare(String(bUser[sorKey]),
+                undefined, {numeric: true});
+            if (comparison !== 0) return comparison;
+        }
+        return 0;
+    });
+}
+
+function tookAndSorting(parsedData: TConditionsAndData, changedRules: string | null): IUser[] {
+    let users: IUser[] = parsedData.data;
+    console.log('users-', parsedData.data);
+
+    if (parsedData.condition) {
+        users = applyCondition(users, parsedData.condition);
+    }
+    console.log('Before -', users);
+    if (parsedData.condition?.sortBy) {
+        users = sortByKeys(users, parsedData.condition.sortBy);
+        console.log('SORTED-', users);
+    }
+    return users;
 }
 
 async function getFromConsole(): Promise<Answers> {
@@ -52,7 +84,7 @@ async function getFromConsole(): Promise<Answers> {
 
 /* inputData in format- {"condition": {"include": [{"name": "John"}], "sortBy": ["email"]}}  */
 !async function run(): Promise<void> {
-    // Get user input for distance and conversion
+    // Get users
     const fromConsole: Answers = await getFromConsole();
     if (!fromConsole.inputData) {
         await run();
@@ -63,16 +95,16 @@ async function getFromConsole(): Promise<Answers> {
     // Parse the user input
     const inputConditions: TConditionsAndData = JSON.parse(fromConsole.inputData);
     const conversionRulesParsed: TNewRules | null = fromConsole.additionalRule ? JSON.parse(fromConsole.additionalRule) : null;
-    let result: IUser[] = [];
 
     // Combine user input with conversion rules with additional rules in file
+    let result: IUser[] = [];
     if (conversionRulesParsed) {
         /*temporary empty*/
     } else
-        result = await tookAndSorting(inputConditions, null);
+        result = await tookAndSorting(inputConditions, fromConsole.additionalRule);
 
     // Display the result
-    console.log(`Result: ${{'result': result}}`);
+    console.log('{result:',result,'}');
 }()
 
 
