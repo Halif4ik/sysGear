@@ -1,0 +1,20 @@
+{
+  "name": "sysGear",
+  "packageManager": "yarn@3.6.4",
+  "type": "module",
+  "scripts": {
+    "watch": "tsc -w",
+    "dev": "node dist/index.js"
+  },
+  "dependencies": {
+    "inquirer": "^9.2.12"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "nodemon": "^3.0.3",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.2.0"
+  }
+}
