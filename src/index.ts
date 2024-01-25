@@ -1,93 +1,80 @@
-import inquirer, {Answers} from 'inquirer';
-
-interface IUser {
-    [key: string]: string | number | boolean
+interface QuestionnaireConfig {
+    [question: string]: string[];
 }
 
-/*{"data": [{"user": "mike@mail.com", "rating": 20, "disabled": false},
-{"user": "greg@mail.com", "rating": 14, "disabled": false},
-{"user": "john@mail.com", "rating": 25, "disabled": true}],
-"condition": {"exclude": [{"disabled": true}], "sortBy": ["rating"]}}*/
-type TConditionsAndData = {
-    "data": IUser[],
-    "condition": {
-        "include"?: IUser[],
-        "exclude"?: IUser[],
-        "sortBy": string[]
+interface Path {
+    [question: string]: string;
+}
+
+interface Paths {
+    number: number;
+    list: Path[][];
+}
+
+interface Result {
+    paths: Paths;
+}
+
+class Questionnaire {
+    private config: QuestionnaireConfig;
+    private paths: Path[][] = [];
+
+    constructor(config: QuestionnaireConfig) {
+        this.config = config;
     }
-}
-type  TNewRules = {
-    "distance": {
-        "unit": string,
-        "value": number
-    },
-    "convertTo": string
-}
 
-function applyCondition(data: IUser[], condition: TConditionsAndData['condition']): IUser[] {
-    if (condition.include)
-        data = data.filter((item: IUser) => condition.include!.some((rule: IUser) =>
-            Object.entries(rule).every(([key, value]) => item[key] === value)));
 
-    if (condition.exclude)
-        data = data.filter(item => !condition.exclude!.some(rule =>
-            Object.entries(rule).every(([key, value]) => item[key] === value)));
-
-    return data;
-}
-
-function sortByKeys(arrUsers: IUser[], sortKeys: string[]): IUser[] {
-    return arrUsers.sort((aUser: IUser, bUser: IUser): number => {
-        for (const sorKey of sortKeys) {
-            const comparison: number = String(aUser[sorKey]).localeCompare(String(bUser[sorKey]),
-                undefined, {numeric: true});
-            if (comparison !== 0) return comparison;
+    private generatePaths(currentPath: Path[], remainingQuestions: string[]): void {
+        if (remainingQuestions.length === 0) {
+            this.paths.push(currentPath);
+            return;
         }
-        return 0;
-    });
-}
 
-function tookAndSorting(parsedData: TConditionsAndData, changedRules: string | null): IUser[] {
-    let users: IUser[] = parsedData.data;
+        const currentQuestion = remainingQuestions[0];
+        const possibleAnswers = this.config[currentQuestion];
 
-    if (parsedData.condition) {
-        users = applyCondition(users, parsedData.condition);
-    }
-    if (parsedData.condition?.sortBy) {
-        users = sortByKeys(users, parsedData.condition.sortBy);
-    }
-    return users;
-}
-
-async function getFromConsole(): Promise<Answers> {
-    return inquirer.prompt([
-        {
-            type: 'input',
-            name: 'inputData',
-            message: 'Enter condition and data in JSON :',
+        for (const answer of possibleAnswers) {
+            currentPath.push({ [currentQuestion]: answer });
+            const nextQuestions = remainingQuestions.slice(1);
+            this.generatePaths(currentPath, nextQuestions);
+            currentPath.pop();
         }
-    ])
-}
-
-/* inputData in format- {"condition": {"include": [{"name": "John"}], "sortBy": ["email"]}}  */
-!async function run(): Promise<void> {
-    // Get users
-    const fromConsole: Answers = await getFromConsole();
-    if (!fromConsole.inputData) {
-        await run();
-        // Get out from another functions wich has empty inputData
-        return;
     }
 
-    // Parse the user input
-    const inputConditions: TConditionsAndData = JSON.parse(fromConsole.inputData);
+    private getAllPaths(): Paths {
+        const allPaths: Path[][] = [];
+        const questions: string[] = Object.keys(this.config);
+        console.log('Object.keys-',questions);
+        for (const startingQuestion of questions) {
+            this.generatePaths([], questions);
+        }
 
-    // Combine user input with conversion rules with additional rules in file
-    const result: IUser[] = await tookAndSorting(inputConditions, fromConsole.additionalRule);
+        return {
+            number: allPaths.length,
+            list: allPaths,
+        };
+    }
 
-    // Display the result
-    console.log('{result:', result, '}');
-}()
+    public runTest(): Result {
+        this.paths = []; // Reset paths
+        const result: Result = {
+            paths: this.getAllPaths(),
+        };
+        return result;
+    }
+}
+
+// Example usage
+const config: QuestionnaireConfig = {
+    "What is your marital status?": ["Single", "Married"],
+    "Are you planning on getting married next year?": ["Yes", "No"],
+    "How long have you been married?": ["Less than a year", "More than a year"],
+    "Have you celebrated your one year anniversary?": ["Yes", "No"],
+};
+
+const questionnaire = new Questionnaire(config);
+const testResult = questionnaire.runTest();
+console.log(JSON.stringify(testResult, null, 2));
 
 
 

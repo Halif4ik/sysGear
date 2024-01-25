@@ -1,45 +1,6 @@
-1
 {
-  "data": [
-    {
-      "name": "John",
-      "email": "john2@mail.com"
-    },
-    {
-      "name": "John",
-      "email": "john1@mail.com"
-    },
-    {
-      "name": "Jane",
-      "email": "jane@mail.com"
-    }
-  ],
-  "condition": {
-    "include": [
-      {"name": "John"}
-    ],
-    "sortBy": ["email"]
-  }
-}
-2
-{ "data": [ { "name": "John", "email": "john2@mail.com" }, { "name": "John", "email": "john1@mail.com" }, { "name": "Jane", "email": "jane@mail.com" } ], "condition": {"exclude": [{"name":"John"},{"email":"john2@mail.com"}]} }
-3
-{
-  "data": [
-    {
-      "name": "John",
-      "email": "john2@mail.com"
-    },
-    {
-      "name": "John",
-      "email": "john1@mail.com"
-    },
-    {
-      "name": "Jane",
-      "email": "jane@mail.com"
-    }
-  ],
-  "condition": {
-    "exclude": [{"name": "John", "email":"john2@mail.com"}]
-  }
+  "What is your marital status?": ["Single", "Married"],
+  "Are you planning on getting married next year?": ["Yes", "No"],
+  "How long have you been married?": ["Less than a year", "More than a year"],
+  "Have you celebrated your one year anniversary?": ["Yes", "No"]
 }
