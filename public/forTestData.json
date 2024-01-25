@@ -1,6 +1,6 @@
 {
-  "What is your marital status?": ["Single", "Married"],
-  "Are you planning on getting married next year?": ["Yes", "No"],
-  "How long have you been married?": ["Less than a year", "More than a year"],
-  "Have you celebrated your one year anniversary?": ["Yes", "No"]
+  "What is your marital status?":{"answ": ["Single", "Married"],"parent":"","showIf":""},
+  "Are you planning on getting married next year?": {"answ" :["Yes", "No"],"showIf":"Single","parent":"What is your marital status?"},
+  "How long have you been married?": {"answ" :["Less than a year", "More than a year"],"showIf":"Married","parent":"What is your marital status?"},
+  "Have you celebrated your one year anniversary?": {"answ" :["Yes", "No"],"showIf":"More than a year","parent":"How long have you been married?"}
 }
