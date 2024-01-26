@@ -1,0 +1,16 @@
+{
+  "paths": {
+    "number": 3,
+    "list": [
+      [{"What is your marital status?": "Single"},
+        {"Are you planning on getting married next year?": "Yes/No"}],
+
+      [{"What is your marital status?": "Married"},
+        {"How long have you been married?": "Less than a year"}],
+
+      [{"What is your marital status?": "Married"},
+        {"How long have you been married?": "More than a year"},
+        {"Have you celebrated your one year anniversary?": "Yes/No"}]
+    ]
+  }
+}

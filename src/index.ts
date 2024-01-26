@@ -1,9 +1,5 @@
 import inquirer, {Answers} from 'inquirer';
 
-interface IUser {
-    [key: string]: string | number | boolean
-}
-
 type TAnswersParent = {
     [key: string]: { answ: string[], showIf: string, parent: string }
 }
@@ -17,6 +13,18 @@ interface TreeNode {
     showIf: string
 }
 
+interface IAllPossiblePath {
+    paths: {
+        number: number
+        list: Array<TQuestionAnswer>[]
+    }
+
+}
+
+type TQuestionAnswer = {
+    [key: string]: string
+}
+
 async function getFromConsole(): Promise<Answers> {
     return inquirer.prompt([
         {
@@ -27,25 +35,6 @@ async function getFromConsole(): Promise<Answers> {
     ])
 }
 
-/*incoming - {
-  'What is your marital status?': { answ: [ 'Single', 'Married' ], parent: '', showIf: '' },
-  'Are you planning on getting married next year?': {
-    answ: [ 'Yes', 'No' ],
-    showIf: 'Single',
-    parent: 'What is your marital status?'
-  },
-  'How long have you been married?': {
-    answ: [ 'Less than a year', 'More than a year' ],
-    showIf: 'Married',
-    parent: 'What is your marital status?'
-  },
-  'Have you celebrated your one year anniversary?': {
-    answ: [ 'Yes', 'No' ],
-    showIf: 'More than a year',
-    parent: 'How long have you been married?'
-  }
-}
-*/
 function buildTree(questAndData: TAnswersParent): TreeNode {
     const resultTree: TreeNode = {
         question: '',
@@ -72,18 +61,18 @@ function buildTree(questAndData: TAnswersParent): TreeNode {
             const childNode: TreeNode = {
                 question,
                 answers: questAndData[question].answ,
-                showIf: questAndData[question].showIf
+                showIf: questAndData[question].showIf,
+                parent: undefined
             }
 
             /*find parent for paste child node*/
-            const parent: TreeNode = findParent(resultTree, questAndData[question].parent);
+            const parent: TreeNode | undefined = findParent(resultTree, questAndData[question].parent);
+            if (!parent) throw new Error('Parent node not found!');
 
-            /*paste child node*/
-            if (parent.answers[0] === questAndData[question].showIf) {
-                parent.childLeft = childNode;
-            } else {
-                parent.childRight = childNode;
-            }
+            /*create relations*/
+            if (parent.answers[0] === questAndData[question].showIf) parent.childLeft = childNode;
+            else parent.childRight = childNode;
+            childNode.parent = parent;
         }
     });
     return resultTree;
@@ -93,15 +82,65 @@ function findParent(currentLeaf: TreeNode, parentQuestion: string): TreeNode | u
     if (currentLeaf.question === parentQuestion) return currentLeaf;
     else {
         if (currentLeaf.childLeft) {
-            const result: TreeNode | undefined = findParent(currentLeaf.childLeft, parentQuestion);
-            if (result) return result;
+            const foundParent: TreeNode | undefined = findParent(currentLeaf.childLeft, parentQuestion);
+            if (foundParent) return foundParent;
         }
         if (currentLeaf.childRight) {
-            const result: TreeNode | undefined = findParent(currentLeaf.childRight, parentQuestion);
-            if (result) return result;
+            const foundParent: TreeNode | undefined = findParent(currentLeaf.childRight, parentQuestion);
+            if (foundParent) return foundParent;
         }
     }
     return undefined;
+}
+
+function calculateAllPathRecursion(currentNode: TreeNode, listPaths: TQuestionAnswer[], result: IAllPossiblePath): IAllPossiblePath {
+    debugger
+    /*this lead doesn't have ANY child we placed in down this branch and can paste it leaf and go out upper*/
+    if (!currentNode.childLeft && !currentNode.childRight) {
+        listPaths.push({[currentNode.question]: `${currentNode.answers[0]}/${currentNode.answers[1]}`});
+        result.paths.list.push(listPaths);
+        result.paths.number++;
+    }
+    else if (!currentNode.childLeft) {
+        listPaths.push({[currentNode.question]: `${currentNode.answers[0]}`});
+        result.paths.list.push(listPaths);
+        result.paths.number++;
+        return result;
+    }
+    else if (!currentNode.childRight) {
+        listPaths.push({[currentNode.question]: `${currentNode.answers[1]}`});
+        result.paths.list.push(listPaths);
+        result.paths.number++;
+        return result;
+    }
+
+    debugger
+    if (currentNode.childLeft) {
+        const newPath: TQuestionAnswer[] = [...listPaths];
+        newPath.push({[currentNode.question]: currentNode.answers[0]});
+        calculateAllPathRecursion(currentNode.childLeft, newPath, result);
+    }
+    debugger
+    /*try another brunch*/
+    if (currentNode.childRight) {
+        const newPath: TQuestionAnswer[] = [...listPaths];
+        newPath.push({[currentNode.question]: currentNode.answers[1]});
+        calculateAllPathRecursion(currentNode.childRight, newPath, result);
+    }
+    /*for typescript moved return from first if*/
+    return result;
+}
+
+function calculateAllPath(currentTree: TreeNode): IAllPossiblePath {
+    const allPossiblePath: IAllPossiblePath = {
+        paths: {
+            number: 0,
+            list: []
+        }
+    }
+    const listData: TQuestionAnswer[] = [];
+    const resAllPosPath: IAllPossiblePath = calculateAllPathRecursion(currentTree, listData, allPossiblePath);
+    return resAllPosPath;
 }
 
 !async function run(): Promise<void> {
@@ -116,10 +155,14 @@ function findParent(currentLeaf: TreeNode, parentQuestion: string): TreeNode | u
     const inputConditions: TAnswersParent = JSON.parse(fromConsole.inputData);
 
     /*build Huffman Tree dependencies*/
-    const result: TreeNode = buildTree(inputConditions);
-    console.log(JSON.stringify(result, null, 2));
+    const resultTree: TreeNode = buildTree(inputConditions);
+
+    /*go around tree and count all path and var*/
+    const resultPath: IAllPossiblePath = calculateAllPath(resultTree);
+    console.log('{resultPath:');
+    console.log(JSON.stringify(resultPath, null, 2));
     // Display the result
-    console.log('{result:', result, '}');
+
 }()
 
 
