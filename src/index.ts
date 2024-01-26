@@ -93,25 +93,27 @@ function findParent(currentLeaf: TreeNode, parentQuestion: string): TreeNode | u
     return undefined;
 }
 
-function calculateAllPathRecursion(currentNode: TreeNode, listPaths: TQuestionAnswer[], result: IAllPossiblePath): IAllPossiblePath {
+function calculateAllPathRecursion(currentNode: TreeNode | undefined, listPaths: TQuestionAnswer[], result: IAllPossiblePath): IAllPossiblePath | undefined {
     debugger
+    /*if undefined  we saved path in result enr return on one level in recursion */
+    if (!currentNode) {
+        result.paths.list.push([...listPaths]);
+        result.paths.number++;
+        return result;
+    }
     /*this lead doesn't have ANY child we placed in down this branch and can paste it leaf and go out upper*/
-    if (!currentNode.childLeft && !currentNode.childRight) {
+    else if (!currentNode.childLeft && !currentNode.childRight) {
         listPaths.push({[currentNode.question]: `${currentNode.answers[0]}/${currentNode.answers[1]}`});
         result.paths.list.push(listPaths);
         result.paths.number++;
-    }
-    else if (!currentNode.childLeft) {
+    }     else if (!currentNode.childLeft) {
         listPaths.push({[currentNode.question]: `${currentNode.answers[0]}`});
-        result.paths.list.push(listPaths);
-        result.paths.number++;
-        return result;
-    }
-    else if (!currentNode.childRight) {
+        calculateAllPathRecursion(currentNode.childLeft, listPaths, result);
+        listPaths.pop();
+    } else if (!currentNode.childRight) {
         listPaths.push({[currentNode.question]: `${currentNode.answers[1]}`});
-        result.paths.list.push(listPaths);
-        result.paths.number++;
-        return result;
+        calculateAllPathRecursion(currentNode.childLeft, listPaths, result);
+        listPaths.pop();
     }
 
     debugger
@@ -127,7 +129,6 @@ function calculateAllPathRecursion(currentNode: TreeNode, listPaths: TQuestionAn
         newPath.push({[currentNode.question]: currentNode.answers[1]});
         calculateAllPathRecursion(currentNode.childRight, newPath, result);
     }
-    /*for typescript moved return from first if*/
     return result;
 }
 
@@ -139,7 +140,8 @@ function calculateAllPath(currentTree: TreeNode): IAllPossiblePath {
         }
     }
     const listData: TQuestionAnswer[] = [];
-    const resAllPosPath: IAllPossiblePath = calculateAllPathRecursion(currentTree, listData, allPossiblePath);
+    const resAllPosPath: IAllPossiblePath | undefined = calculateAllPathRecursion(currentTree, listData, allPossiblePath);
+    if (!resAllPosPath) throw new Error('Error calculateAllPathRecursion');
     return resAllPosPath;
 }
 
